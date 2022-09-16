@@ -36,6 +36,13 @@ pub struct PublishMessageRequest {
     pub messages: Vec<EncodedMessage>,
 }
 
+#[derive(Serialize, Clone)]
+pub struct CreateTopicRequest {}
+
+#[derive(Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct CreateTopicResponse {}
+
 impl Topic {
     pub async fn subscribe(&self) -> Result<Subscription, error::Error> {
         let client = self.client.clone();
@@ -83,6 +90,19 @@ impl Topic {
             payload,
         )
         .await
+    }
+
+    pub async fn create(&self) -> Result<(), error::Error> {
+        let uri: hyper::Uri = format!("{}/v1/{}", *PUBSUB_HOST, self.name)
+            .parse()
+            .unwrap();
+
+        let payload = CreateTopicRequest {};
+
+        self.perform_request::<CreateTopicRequest, CreateTopicResponse>(uri, Method::PUT, payload)
+            .await?;
+
+        Ok(())
     }
 
     async fn perform_request<T: serde::Serialize, U: DeserializeOwned + Clone>(
