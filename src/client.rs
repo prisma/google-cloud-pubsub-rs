@@ -1,7 +1,7 @@
 use crate::error;
 use crate::subscription::Subscription;
 use crate::topic::Topic;
-use goauth::auth::JwtClaims;
+use goauth::auth::{JwtClaims, Token};
 use goauth::scopes::Scope;
 use hyper::client::HttpConnector;
 use hyper_tls::HttpsConnector;
@@ -132,6 +132,11 @@ impl Client {
     }
 
     async fn get_token(&mut self) -> Result<goauth::auth::Token, goauth::GoErr> {
+        if std::env::var("PUBSUB_EMULATOR_HOST").is_ok() {
+            let fake_token_str = r#"{"access_token":"abc", "token_type":"foo", "expires_in":100000}"#;
+            return Token::from_str(fake_token_str);
+        }
+
         let credentials =
             goauth::credentials::Credentials::from_str(&self.0.read().unwrap().credentials_string)
                 .unwrap();
